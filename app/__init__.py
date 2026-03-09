@@ -51,6 +51,8 @@ def create_app() -> Flask:
 
     with flask_app.app_context():
         # 确保所有 Model 在 create_all() 前已导入，表结构才能被正确创建
+        from app.user.models import User  # noqa: F401
+        from app.updatehub.models import AppVersion, AppConfig, AppAccess  # noqa: F401
         from app.apistack.models import ApiEntry, ApiToken  # noqa: F401
         db.create_all()
 
