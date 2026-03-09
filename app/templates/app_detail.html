@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}{{ app_name }} · UpdateHub{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="{{ url_for('web.index') }}">软件列表</a>
+    <span>/</span>
+    <span>{{ app_name }}</span>
+  </div>
+  <h1><span class="app-icon-lg">📦</span> {{ app_name }}</h1>
+</div>
+
+<!-- 最新版本 -->
+<section class="section">
+  <h2 class="section-title">最新版本</h2>
+  {% if latest %}
+  <div class="latest-grid">
+    {% for platform, info in latest.items() %}
+    <div class="latest-card">
+      <div class="latest-card-header">
+        <span class="platform-icon">
+          {% if platform == 'windows' %}🪟{% elif platform == 'mac' %}🍎{% else %}🐧{% endif %}
+        </span>
+        <span class="platform-label">{{ platform }}</span>
+        {% if info.mandatory %}
+        <span class="badge badge-danger">强制更新</span>
+        {% endif %}
+      </div>
+      <div class="latest-version">v{{ info.version }}</div>
+      <div class="latest-meta">
+        <span class="source-badge source-{{ info.source }}">{{ info.source }}</span>
+        <span class="release-date">{{ info.release_date }}</span>
+      </div>
+      {% if info.release_notes %}
+      <p class="release-notes">{{ info.release_notes }}</p>
+      {% endif %}
+      {% if info.sha256 %}
+      <div class="sha256-block">
+        <div class="sha256-label">SHA256</div>
+        <code class="sha256-full">{{ info.sha256 }}</code>
+        <div class="sha256-actions">
+          <button class="btn-hash" onclick="copyHash(this, '{{ info.sha256 }}')">复制</button>
+          <button class="btn-hash" onclick="downloadHash('{{ info.sha256 }}', '{{ app_name }}', '{{ platform }}', '{{ info.version }}')">下载 .txt</button>
+        </div>
+      </div>
+      {% endif %}
+      <a class="btn btn-primary" href="{{ info.download_url }}">下载</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty-tip">暂无版本。</p>
+  {% endif %}
+</section>
+
+<!-- 全部版本 -->
+<section class="section">
+  <h2 class="section-title">全部版本</h2>
+  {% if versions %}
+  <div class="versions-list">
+    {% for version, plat_map in versions.items() %}
+    <div class="version-group">
+      <div class="version-group-header">
+        <span class="version-tag">v{{ version }}</span>
+      </div>
+      <table class="version-table">
+        <thead>
+          <tr>
+            <th>平台</th>
+            <th>来源</th>
+            <th>大小</th>
+            <th>SHA256</th>
+            <th>发布日期</th>
+            <th>更新说明</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for platform, info in plat_map.items() %}
+          <tr>
+            <td>
+              <span class="platform-cell">
+                {% if platform == 'windows' %}🪟{% elif platform == 'mac' %}🍎{% else %}🐧{% endif %}
+                {{ platform }}
+              </span>
+            </td>
+            <td><span class="source-badge source-{{ info.source }}">{{ info.source }}</span></td>
+            <td>
+              {% if info.file_size %}
+                {% set size_mb = (info.file_size / 1048576) | round(1) %}
+                {{ size_mb }} MB
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td class="sha256-cell">
+              {% if info.sha256 %}
+              <div class="sha256-block sha256-block--compact">
+                <code class="sha256-full">{{ info.sha256 }}</code>
+                <div class="sha256-actions">
+                  <button class="btn-hash" onclick="copyHash(this, '{{ info.sha256 }}')">复制</button>
+                  <button class="btn-hash" onclick="downloadHash('{{ info.sha256 }}', '{{ app_name }}', '{{ platform }}', '{{ info.version }}')">下载 .txt</button>
+                </div>
+              </div>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td>{{ info.release_date or '—' }}</td>
+            <td class="notes-cell">{{ info.release_notes or '—' }}</td>
+            <td>
+              <a class="btn btn-sm" href="{{ info.download_url }}">下载</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty-tip">暂无版本记录。</p>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyHash(btn, hash) {
+  navigator.clipboard.writeText(hash).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = '已复制!';
+    btn.classList.add('btn-hash--ok');
+    setTimeout(function() { btn.textContent = orig; btn.classList.remove('btn-hash--ok'); }, 1800);
+  });
+}
+
+function downloadHash(hash, appName, platform, version) {
+  var content = 'SHA256 (' + appName + ' ' + version + ' ' + platform + ')\n' + hash + '\n';
+  var blob = new Blob([content], { type: 'text/plain' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = appName + '-' + version + '-' + platform + '.sha256.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}软件列表 · UpdateHub{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>软件列表</h1>
+  <p class="subtitle">共 {{ apps|length }} 款软件</p>
+</div>
+
+{% if apps %}
+<div class="app-grid">
+  {% for app in apps %}
+  <a class="app-card" href="{{ url_for('web.app_detail', app_name=app.name) }}">
+    <div class="app-card-header">
+      <span class="app-icon">📦</span>
+      <div>
+        <h2 class="app-name">{{ app.name }}</h2>
+        <span class="version-count">{{ app.version_count }} 个版本</span>
+      </div>
+    </div>
+
+    <div class="platform-list">
+      {% for platform, version in app.latest.items() %}
+      <div class="platform-badge platform-{{ platform }}">
+        <span class="platform-name">
+          {% if platform == 'windows' %}🪟{% elif platform == 'mac' %}🍎{% else %}🐧{% endif %}
+          {{ platform }}
+        </span>
+        <span class="platform-version">v{{ version }}</span>
+      </div>
+      {% else %}
+      <span class="no-version">暂无版本</span>
+      {% endfor %}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">📭</div>
+  <p>暂无软件，请通过 API 上传或注册版本。</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,33 @@
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# ── 虚拟环境 ──
+.venv/
+venv/
+env/
+
+# ── Flask / 运行时 ──
+instance/
+*.log
+
+# ── 敏感配置（含数据库密码、Token） ──
+.env
+
+# ── 本地数据（Token 文件、数据库等） ──
+data/
+
+# ── 用户上传的文件 ──
+uploads/
+
+# ── IDE ──
+.idea/
+.vscode/
+*.iml
+
+# ── 操作系统 ──
+.DS_Store
+Thumbs.db
+desktop.ini
