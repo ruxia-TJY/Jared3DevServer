@@ -1,9 +1,21 @@
-# Ubuntu 24 部署指南
+# Jared3Dev Server · Ubuntu 24 部署指南
 
-## 架构
+## 架构总览
 
 ```
-Internet → Nginx（80/443）→ Gunicorn（Unix Socket）→ Flask App → MySQL
+Internet
+  │
+  ▼
+Nginx（80 / 443）          ← 反向代理、静态文件直出、HTTPS 终止
+  │
+  ▼ Unix Socket
+Gunicorn（4 Workers）      ← WSGI 进程管理，由 systemd 守护
+  │
+  ▼
+Flask App                  ← Jared3Dev Server 应用本体
+  │
+  ▼
+MySQL 8                    ← 数据持久化（jared3devserver 库）
 ```
 
 ---
@@ -23,13 +35,22 @@ sudo apt install -y python3 python3-pip python3-venv git nginx mysql-server
 # 启动并设置开机自启
 sudo systemctl enable --now mysql
 
+# 安全初始化（设置 root 密码等）
+sudo mysql_secure_installation
+
 # 进入 MySQL
 sudo mysql
+```
 
-# 创建数据库和用户（替换 YOUR_PASSWORD）
-CREATE DATABASE updatehub CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'updatehub'@'localhost' IDENTIFIED BY 'YOUR_PASSWORD';
-GRANT ALL PRIVILEGES ON updatehub.* TO 'updatehub'@'localhost';
+```sql
+-- 创建数据库
+CREATE DATABASE jared3devserver
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+-- 创建专用用户（替换 YOUR_PASSWORD）
+CREATE USER 'jared3dev'@'localhost' IDENTIFIED BY 'YOUR_PASSWORD';
+GRANT ALL PRIVILEGES ON jared3devserver.* TO 'jared3dev'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
 ```
@@ -39,9 +60,9 @@ EXIT;
 ## 三、部署项目
 
 ```bash
-# 克隆到服务器（或通过 scp/rsync 上传）
-git clone <your-repo-url> /srv/updatehub
-cd /srv/updatehub
+# 克隆代码（或通过 scp / rsync 上传）
+git clone <your-repo-url> /srv/jared3devserver
+cd /srv/jared3devserver
 
 # 创建虚拟环境并安装依赖
 python3 -m venv .venv
@@ -55,8 +76,7 @@ pip install gunicorn
 ## 四、配置 config.py
 
 ```bash
-cp config.py config.py.bak   # 备份
-nano config.py
+nano /srv/jared3devserver/config.py
 ```
 
 修改数据库连接信息：
@@ -64,129 +84,162 @@ nano config.py
 ```python
 DB_HOST     = '127.0.0.1'
 DB_PORT     = 3306
-DB_USER     = 'updatehub'       # 与上面创建的用户一致
-DB_PASSWORD = 'YOUR_PASSWORD'   # 替换为实际密码
-DB_NAME     = 'updatehub'
+DB_USER     = 'jared3dev'        # 与上面创建的 MySQL 用户一致
+DB_PASSWORD = 'YOUR_PASSWORD'    # 替换为实际密码
+DB_NAME     = 'jared3devserver'
 ```
+
+> `config.py` 已加入 `.gitignore`，密码不会提交到版本库。
 
 ---
 
 ## 五、初始化数据库
 
 ```bash
+cd /srv/jared3devserver
 source .venv/bin/activate
+
+# 建表 + 写入测试数据
 python seed.py
+```
+
+首次运行会自动：
+- 创建所有数据表（`db.create_all()`）
+- 生成上传 Token（保存至 `data/.token`）
+- 生成 Flask Session 密钥（保存至 `data/.secret_key`）
+
+---
+
+## 六、设置目录权限
+
+```bash
+# 创建日志目录
+sudo mkdir -p /var/log/jared3devserver
+
+# 将项目目录和日志目录归属给 www-data
+sudo chown -R www-data:www-data /srv/jared3devserver
+sudo chown    www-data:www-data /var/log/jared3devserver
 ```
 
 ---
 
-## 六、配置 Gunicorn（systemd 服务）
-
-创建服务文件：
+## 七、配置 Gunicorn（systemd 服务）
 
 ```bash
-sudo nano /etc/systemd/system/updatehub.service
+sudo nano /etc/systemd/system/jared3devserver.service
 ```
-
-写入以下内容（注意替换路径和用户名）：
 
 ```ini
 [Unit]
-Description=UpdateHub Flask App
+Description=Jared3Dev Server
 After=network.target mysql.service
 
 [Service]
 User=www-data
 Group=www-data
-WorkingDirectory=/srv/updatehub
-Environment="PATH=/srv/updatehub/.venv/bin"
-ExecStart=/srv/updatehub/.venv/bin/gunicorn \
+WorkingDirectory=/srv/jared3devserver
+Environment="PATH=/srv/jared3devserver/.venv/bin"
+ExecStart=/srv/jared3devserver/.venv/bin/gunicorn \
     --workers 4 \
-    --bind unix:/run/updatehub/updatehub.sock \
+    --bind unix:/run/jared3devserver/jared3devserver.sock \
     --timeout 120 \
-    --access-logfile /var/log/updatehub/access.log \
-    --error-logfile /var/log/updatehub/error.log \
+    --access-logfile /var/log/jared3devserver/access.log \
+    --error-logfile  /var/log/jared3devserver/error.log \
     run:app
-RuntimeDirectory=updatehub
+RuntimeDirectory=jared3devserver
 RuntimeDirectoryMode=0755
+Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-创建日志目录并设置权限：
-
-```bash
-sudo mkdir -p /var/log/updatehub
-sudo chown www-data:www-data /var/log/updatehub
-sudo chown -R www-data:www-data /srv/updatehub
-```
-
-启动服务：
-
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable --now updatehub
-sudo systemctl status updatehub
+sudo systemctl enable --now jared3devserver
+sudo systemctl status jared3devserver
 ```
 
 ---
 
-## 七、配置 Nginx
+## 八、配置 Nginx
 
 ```bash
-sudo nano /etc/nginx/sites-available/updatehub
+sudo nano /etc/nginx/sites-available/jared3devserver
 ```
 
 ```nginx
 server {
     listen 80;
-    server_name your-domain.com;   # 替换为实际域名或 IP
+    server_name your-domain.com;   # 替换为实际域名或服务器 IP
 
-    # 大文件上传支持（对应 MAX_CONTENT_LENGTH = 2GB）
+    # 单文件上传上限与 MAX_CONTENT_LENGTH 一致
     client_max_body_size 2G;
 
-    # 静态文件由 Nginx 直接提供
+    # 静态资源由 Nginx 直接提供，不经过 Python
     location /static/ {
-        alias /srv/updatehub/app/static/;
+        alias /srv/jared3devserver/app/static/;
         expires 7d;
         add_header Cache-Control "public";
     }
 
-    # 上传文件目录（如需直接下载）
+    # 本地上传文件目录（internal 禁止外部直接访问，Flask 通过 X-Accel-Redirect 控制）
     location /uploads/ {
-        alias /srv/updatehub/uploads/;
-        internal;   # 禁止外部直接访问，由 Flask 控制权限
+        alias /srv/jared3devserver/uploads/;
+        internal;
     }
 
     # 其余请求转发给 Gunicorn
     location / {
-        proxy_pass http://unix:/run/updatehub/updatehub.sock;
-        proxy_set_header Host              $host;
-        proxy_set_header X-Real-IP         $remote_addr;
-        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass         http://unix:/run/jared3devserver/jared3devserver.sock;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
         proxy_read_timeout 120s;
     }
 }
 ```
 
-启用并重载 Nginx：
-
 ```bash
-sudo ln -s /etc/nginx/sites-available/updatehub /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/jared3devserver \
+           /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 ```
 
 ---
 
-## 八、（可选）HTTPS — Let's Encrypt
+## 九、（可选）HTTPS — Let's Encrypt
 
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d your-domain.com
-sudo systemctl reload nginx
+# certbot 会自动修改 Nginx 配置并重载
+```
+
+证书自动续期已由 certbot 的 systemd timer 处理，无需额外配置。
+
+---
+
+## 十、验证部署
+
+```bash
+# 服务状态
+sudo systemctl status jared3devserver
+
+# 实时应用日志
+sudo tail -f /var/log/jared3devserver/error.log
+
+# 实时访问日志
+sudo tail -f /var/log/jared3devserver/access.log
+
+# Nginx 错误日志
+sudo tail -f /var/log/nginx/error.log
+
+# 测试接口（替换域名）
+curl http://your-domain.com/apistack/info/bingWallpaper
 ```
 
 ---
@@ -195,23 +248,28 @@ sudo systemctl reload nginx
 
 | 操作 | 命令 |
 |------|------|
-| 查看服务状态 | `sudo systemctl status updatehub` |
-| 重启服务 | `sudo systemctl restart updatehub` |
-| 查看应用日志 | `sudo tail -f /var/log/updatehub/error.log` |
-| 查看 Nginx 日志 | `sudo tail -f /var/log/nginx/error.log` |
-| 更新代码后重启 | `git pull && sudo systemctl restart updatehub` |
+| 查看服务状态 | `sudo systemctl status jared3devserver` |
+| 重启服务 | `sudo systemctl restart jared3devserver` |
+| 停止服务 | `sudo systemctl stop jared3devserver` |
+| 查看应用日志 | `sudo tail -f /var/log/jared3devserver/error.log` |
+| 更新代码 | `git pull && sudo systemctl restart jared3devserver` |
+| 重载 Nginx | `sudo systemctl reload nginx` |
 
 ---
 
-## 开发模式（不需要 Nginx/Gunicorn）
+## 开发模式（仅本地调试）
 
-仅用于本地调试，**不要**在生产环境使用：
+> **不要**在生产环境使用以下方式，Flask 内置服务器不适合生产负载。
 
 ```bash
+cd /srv/jared3devserver
 source .venv/bin/activate
 python run.py
+# 访问 http://<server-ip>:5000
 ```
 
-访问 `http://<server-ip>:5000`。
+开放防火墙端口（如需远程访问）：
 
-> 需开放防火墙端口：`sudo ufw allow 5000`
+```bash
+sudo ufw allow 5000
+```

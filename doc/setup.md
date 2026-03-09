@@ -1,9 +1,9 @@
-# UpdateHub 部署与配置
+# Jared3Dev Server 部署与配置
 
 ## 项目结构
 
 ```
-UpdateHub/
+Jared3Dev Server/
 ├── run.py                          # 启动入口
 ├── config.py                       # 全局配置（数据库、Token、文件路径等）
 ├── seed.py                         # 测试数据填充脚本
@@ -74,12 +74,12 @@ DB_HOST     = '127.0.0.1'    # MySQL 主机
 DB_PORT     = 3306            # MySQL 端口
 DB_USER     = 'root'          # 用户名
 DB_PASSWORD = 'your_password' # 密码
-DB_NAME     = 'updatehub'     # 数据库名
+DB_NAME     = 'jared3devserver'     # 数据库名
 ```
 
 > 首次使用前需在 MySQL 中手动创建数据库：
 > ```sql
-> CREATE DATABASE updatehub CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+> CREATE DATABASE jared3devserver CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 > ```
 > 启动后表结构会自动创建（`db.create_all()`）。
 
@@ -105,8 +105,8 @@ ALLOWED_EXTENSIONS = {
 首次运行自动生成，保存在 `data/.token`，控制台也会打印一次：
 
 ```
-[UpdateHub] 首次运行，已生成上传 Token：1c833f57d574...
-[UpdateHub] Token 已保存至：D:\...\data\.token
+[Jared3Dev Server] 首次运行，已生成上传 Token：1c833f57d574...
+[Jared3Dev Server] Token 已保存至：D:\...\data\.token
 ```
 
 ---
