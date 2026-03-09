@@ -9,6 +9,8 @@ seed.py - 向数据库插入示例数据，用于开发测试。
     MyEditor  -> public     （无需登录）
     DataSync  -> protected  （需要登录）
     QuickNote -> restricted （仅 alice + 管理员）
+  API Stack:
+    bingWallpaper -> public  （获取 Bing 每日壁纸，公开访问）
 """
 import os
 from datetime import date
@@ -17,6 +19,7 @@ from app import create_app
 from app.extensions import db
 from app.updatehub.models import AppVersion, AppConfig, AppAccess
 from app.user.models import User
+from app.apistack.models import ApiEntry
 
 # ── 用户数据 ────────────────────────────────────────────────
 
@@ -25,6 +28,20 @@ USERS = [
     dict(username='alice',   password='alice123',   email='alice@example.com',   role='user',  active=True),
     dict(username='bob',     password='bob123',     email='bob@example.com',     role='user',  active=True),
     dict(username='charlie', password='charlie123', email='charlie@example.com', role='user',  active=False),  # 禁用账号示例
+]
+
+# ── API Stack 数据 ───────────────────────────────────────────
+
+APIS = [
+    dict(
+        name='bingWallpaper',
+        display_name='Bing 每日壁纸',
+        description='获取 Bing 首页每日壁纸的标题、版权信息及原图链接',
+        author='Jared3Dev',
+        version='1.0.0',
+        visibility='public',
+        enabled=True,
+    ),
 ]
 
 # ── 软件访问控制 ─────────────────────────────────────────────
@@ -202,6 +219,19 @@ def seed_access_grants(user_map):
     print(f'  访问授权: 插入 {inserted} 条，跳过 {skipped} 条')
 
 
+def seed_apis():
+    inserted = skipped = 0
+    for item in APIS:
+        existing = ApiEntry.query.filter_by(name=item['name']).first()
+        if existing:
+            skipped += 1
+        else:
+            db.session.add(ApiEntry(**item))
+            inserted += 1
+    db.session.commit()
+    print(f'  API     : 插入 {inserted} 条，跳过 {skipped} 条')
+
+
 def seed_versions():
     inserted = skipped = files_created = 0
     for item in VERSIONS:
@@ -232,6 +262,7 @@ def seed():
         seed_versions()
         seed_access_config()
         seed_access_grants(user_map)
+        seed_apis()
         print('[Seed] 全部完成。\n')
         print('测试账号:')
         for u in USERS:
@@ -241,6 +272,10 @@ def seed():
         print('  MyEditor   -> public     （任何人可访问）')
         print('  DataSync   -> protected  （需要登录）')
         print('  QuickNote  -> restricted （仅 alice + 管理员）')
+        print('\nAPI Stack:')
+        for a in APIS:
+            vis = '公开' if a['visibility'] == 'public' else '私有'
+            print(f'  {a["name"]:20s} [{vis}]  /apistack/api/{a["name"]}')
 
 
 if __name__ == '__main__':

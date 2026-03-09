@@ -50,6 +50,8 @@ def create_app() -> Flask:
         return db.session.get(User, int(user_id))
 
     with flask_app.app_context():
+        # 确保所有 Model 在 create_all() 前已导入，表结构才能被正确创建
+        from app.apistack.models import ApiEntry, ApiToken  # noqa: F401
         db.create_all()
 
         from app.updatehub import updatehub
@@ -60,5 +62,8 @@ def create_app() -> Flask:
 
         from app.user import user
         flask_app.register_blueprint(user)
+
+        from app.apistack import apistack
+        flask_app.register_blueprint(apistack)
 
     return flask_app

@@ -189,6 +189,87 @@ main.container { padding-top: 36px; padding-bottom: 48px; }
 .btn-danger { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
 .btn-danger:hover { background: #fca5a5; }
 
+/* ── API Stack ── */
+.muted { color: var(--text-muted); }
+
+/* 新增面板 */
+.add-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.add-panel-summary { padding: 14px 20px; font-weight: 600; font-size: .95rem; cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; user-select: none; }
+.add-panel-summary::-webkit-details-marker { display: none; }
+.add-panel-summary:hover { background: var(--bg); }
+.add-panel[open] .add-panel-summary { border-bottom: 1px solid var(--border); }
+.add-form { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+/* API 列表 */
+.api-list { display: flex; flex-direction: column; gap: 12px; }
+.api-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+.api-card-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; gap: 12px; flex-wrap: wrap; }
+.api-card-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.api-name { font-family: monospace; font-size: 1rem; font-weight: 700; background: #f1f5f9; padding: 2px 8px; border-radius: 5px; }
+.api-display { font-size: .95rem; color: var(--text-muted); }
+.api-meta { display: flex; align-items: center; gap: 16px; padding: 0 20px 12px; flex-wrap: wrap; font-size: .85rem; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+.api-url { font-family: monospace; color: var(--primary); font-size: .82rem; }
+.api-desc { color: var(--text); }
+.api-meta-item {  }
+
+/* Token 面板 */
+.token-panel { }
+.token-summary { padding: 10px 20px; font-size: .875rem; font-weight: 500; cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; user-select: none; color: var(--text-muted); }
+.token-summary::-webkit-details-marker { display: none; }
+.token-summary:hover { color: var(--text); background: var(--bg); }
+.token-panel[open] .token-summary { border-bottom: 1px solid var(--border); background: var(--bg); }
+.token-count { display: inline-block; background: var(--border); color: var(--text-muted); border-radius: 99px; padding: 0 7px; font-size: .75rem; font-weight: 700; }
+.token-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.token-val { font-family: monospace; font-size: .8rem; background: #f1f5f9; padding: 3px 6px; border-radius: 4px; word-break: break-all; }
+.token-add-form { display: flex; align-items: center; gap: 8px; padding-top: 4px; }
+
+/* ── API Doc ── */
+.doc-list { display: flex; flex-direction: column; gap: 16px; }
+.doc-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px; }
+.doc-card-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.doc-card-title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.doc-display-name { font-size: 1.05rem; font-weight: 600; }
+.doc-card-badges { display: flex; align-items: center; gap: 8px; }
+.doc-version { font-family: monospace; font-size: .8rem; color: var(--text-muted); background: var(--bg); border: 1px solid var(--border); padding: 1px 8px; border-radius: 99px; }
+.doc-desc { color: var(--text-muted); font-size: .9rem; line-height: 1.6; }
+.doc-endpoint { display: flex; flex-direction: column; gap: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 12px 16px; }
+.doc-endpoint-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.doc-method { font-size: .72rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: #dcfce7; color: #16a34a; letter-spacing: .04em; white-space: nowrap; }
+.doc-method-info { background: #e0e7ff; color: #4338ca; }
+.doc-url { font-family: monospace; font-size: .85rem; color: var(--text); flex: 1; word-break: break-all; }
+.doc-try-link { font-size: .82rem; color: var(--primary); white-space: nowrap; }
+.doc-try-link:hover { text-decoration: underline; }
+.doc-token-tip { background: #fef9c3; border: 1px solid #fde047; border-radius: 7px; padding: 10px 14px; font-size: .875rem; color: #a16207; display: flex; flex-direction: column; gap: 6px; }
+.doc-tip-icon { margin-right: 4px; }
+.doc-tip-list { margin: 4px 0 0 20px; display: flex; flex-direction: column; gap: 3px; }
+.doc-tip-list code { background: rgba(0,0,0,.06); padding: 1px 5px; border-radius: 4px; font-size: .82rem; }
+.doc-footer { display: flex; align-items: center; justify-content: space-between; font-size: .8rem; color: var(--text-muted); padding-top: 4px; border-top: 1px solid var(--border); }
+
+/* ── API Doc Detail ── */
+.doc-info-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 28px; box-shadow: var(--shadow); }
+.doc-editor { font-family: monospace; font-size: .875rem; resize: vertical; min-height: 200px; line-height: 1.6; }
+
+/* Markdown 渲染区域 */
+.markdown-body { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 36px; box-shadow: var(--shadow); line-height: 1.8; color: var(--text); }
+.markdown-body h1, .markdown-body h2, .markdown-body h3,
+.markdown-body h4, .markdown-body h5, .markdown-body h6 { font-weight: 700; margin: 1.4em 0 .6em; line-height: 1.3; }
+.markdown-body h1 { font-size: 1.6rem; border-bottom: 2px solid var(--border); padding-bottom: .4em; }
+.markdown-body h2 { font-size: 1.3rem; border-bottom: 1px solid var(--border); padding-bottom: .3em; }
+.markdown-body h3 { font-size: 1.1rem; }
+.markdown-body p { margin: .75em 0; }
+.markdown-body a { color: var(--primary); text-decoration: underline; }
+.markdown-body code { font-family: monospace; font-size: .875em; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; }
+.markdown-body pre { background: #1e293b; color: #e2e8f0; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 1em 0; }
+.markdown-body pre code { background: none; padding: 0; font-size: .875rem; color: inherit; }
+.markdown-body blockquote { border-left: 4px solid var(--border); margin: 1em 0; padding: .5em 1em; color: var(--text-muted); background: var(--bg); border-radius: 0 6px 6px 0; }
+.markdown-body ul, .markdown-body ol { margin: .75em 0 .75em 1.5em; }
+.markdown-body li { margin: .3em 0; }
+.markdown-body table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: .9rem; }
+.markdown-body th { background: #f1f5f9; padding: 8px 14px; text-align: left; font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
+.markdown-body td { padding: 10px 14px; border-top: 1px solid var(--border); }
+.markdown-body tr:hover td { background: var(--bg); }
+.markdown-body hr { border: none; border-top: 1px solid var(--border); margin: 1.5em 0; }
+
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .app-grid { grid-template-columns: 1fr; }

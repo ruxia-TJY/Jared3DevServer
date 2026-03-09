@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}API 管理 · UpdateHub{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>API 管理</h1>
+  <span style="color:var(--text-muted);font-size:.9rem;">共 {{ apis|length }} 个 API</span>
+</div>
+
+{# ── 新增 API 表单 ─────────────────────────────────────────────────────────── #}
+<section class="section">
+  <details class="add-panel">
+    <summary class="add-panel-summary">+ 新增 API</summary>
+    <form method="post" action="{{ url_for('apistack.manage_add') }}" class="add-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">
+            名称
+            <span class="form-optional">（URL slug，区分大小写）</span>
+          </label>
+          <input class="form-input" name="name" required placeholder="bingWallpaper">
+        </div>
+        <div class="form-group">
+          <label class="form-label">显示名称</label>
+          <input class="form-input" name="display_name" required placeholder="Bing 每日壁纸">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">作者 <span class="form-optional">（可选）</span></label>
+          <input class="form-input" name="author" placeholder="作者名">
+        </div>
+        <div class="form-group">
+          <label class="form-label">版本</label>
+          <input class="form-input" name="version" value="1.0.0" placeholder="1.0.0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">公开性</label>
+          <select class="form-input" name="visibility">
+            <option value="public">公开（任何人可访问）</option>
+            <option value="private">私有（需 Token 访问）</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">描述 <span class="form-optional">（可选）</span></label>
+          <input class="form-input" name="description" placeholder="简短描述此 API 的功能">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">
+          使用文档 <span class="form-optional">（可选，支持 Markdown）</span>
+        </label>
+        <textarea class="form-input doc-editor" name="doc_content" rows="8"
+                  placeholder="## 接口说明&#10;&#10;描述 API 的参数、返回值、示例等..."></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">添加</button>
+      </div>
+    </form>
+  </details>
+</section>
+
+{# ── API 列表 ──────────────────────────────────────────────────────────────── #}
+<section class="section">
+  <div class="section-title">API 列表</div>
+
+  {% if apis %}
+  <div class="api-list">
+    {% for api in apis %}
+    <div class="api-card">
+
+      {# 卡片头部：名称 + 徽章 + 操作按钮 #}
+      <div class="api-card-head">
+        <div class="api-card-title">
+          <code class="api-name">{{ api.name }}</code>
+          <span class="api-display">{{ api.display_name }}</span>
+          {% if api.visibility == 'public' %}
+            <span class="access-badge access-public">公开</span>
+          {% else %}
+            <span class="access-badge access-restricted">私有</span>
+          {% endif %}
+          {% if not api.enabled %}
+            <span class="status-badge status-off">已禁用</span>
+          {% endif %}
+        </div>
+        <div class="action-group">
+          <a class="btn btn-sm" href="{{ url_for('apistack.manage_edit', api_id=api.id) }}">编辑</a>
+          <form method="post" action="{{ url_for('apistack.manage_toggle', api_id=api.id) }}">
+            <button type="submit" class="btn btn-sm">
+              {{ '禁用' if api.enabled else '启用' }}
+            </button>
+          </form>
+          <form method="post" action="{{ url_for('apistack.manage_delete', api_id=api.id) }}"
+                onsubmit="return confirm('确认删除 API「{{ api.name }}」及其所有 Token？')">
+            <button type="submit" class="btn btn-sm btn-danger">删除</button>
+          </form>
+        </div>
+      </div>
+
+      {# 元信息行 #}
+      <div class="api-meta">
+        <span class="api-url">{{ api.url }}</span>
+        {% if api.description %}<span class="api-desc">{{ api.description }}</span>{% endif %}
+        <span class="api-meta-item">v{{ api.version }}</span>
+        {% if api.author %}<span class="api-meta-item">作者：{{ api.author }}</span>{% endif %}
+        <span class="api-meta-item muted">
+          更新：{{ api.updated_at.strftime('%Y-%m-%d %H:%M') if api.updated_at else '—' }}
+        </span>
+      </div>
+
+      {# 文档编辑面板 #}
+      <details class="token-panel">
+        <summary class="token-summary">
+          文档编辑
+          {% if api.doc_content %}
+            <span class="token-count" style="background:#dcfce7;color:#16a34a;">已填写</span>
+          {% else %}
+            <span class="token-count">未填写</span>
+          {% endif %}
+          <a href="{{ url_for('apistack.api_doc_detail', api_name=api.name) }}"
+             target="_blank" style="margin-left:auto;font-size:.8rem;color:var(--primary);">预览 ↗</a>
+        </summary>
+        <div class="token-body">
+          <form method="post" action="{{ url_for('apistack.manage_doc', api_id=api.id) }}">
+            <div class="form-group">
+              <label class="form-label" style="font-size:.8rem;color:var(--text-muted);">
+                支持 Markdown 语法（表格、代码块、标题等）
+              </label>
+              <textarea class="form-input doc-editor" name="doc_content"
+                        rows="12" placeholder="## 接口说明&#10;&#10;描述 API 的功能...">{{ api.doc_content or '' }}</textarea>
+            </div>
+            <div class="form-actions" style="margin-top:8px;">
+              <button type="submit" class="btn btn-primary">保存文档</button>
+            </div>
+          </form>
+        </div>
+      </details>
+
+      {# 私有 API：Token 管理面板 #}
+      {% if api.visibility == 'private' %}
+      <details class="token-panel">
+        <summary class="token-summary">
+          Token 管理
+          <span class="token-count">{{ api.tokens|length }}</span>
+        </summary>
+        <div class="token-body">
+
+          {% if api.tokens %}
+          <table class="version-table">
+            <thead>
+              <tr>
+                <th>Token</th>
+                <th>备注</th>
+                <th>创建时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in api.tokens %}
+              <tr>
+                <td><code class="token-val">{{ t.token }}</code></td>
+                <td>{{ t.label or '—' }}</td>
+                <td>{{ t.created_at.strftime('%Y-%m-%d %H:%M') if t.created_at else '—' }}</td>
+                <td>
+                  <form method="post"
+                        action="{{ url_for('apistack.manage_token_delete', token_id=t.id) }}"
+                        onsubmit="return confirm('确认删除此 Token？')">
+                    <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="muted" style="padding:6px 0 10px;">暂无 Token</p>
+          {% endif %}
+
+          <form method="post"
+                action="{{ url_for('apistack.manage_token_add', api_id=api.id) }}"
+                class="token-add-form">
+            <input class="form-input" name="label" placeholder="备注（如：iOS 客户端）"
+                   style="max-width:220px;">
+            <button type="submit" class="btn btn-sm">生成新 Token</button>
+          </form>
+
+        </div>
+      </details>
+      {% endif %}
+
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📭</div>
+    <p>暂无 API，点击上方「新增 API」开始添加</p>
+  </div>
+  {% endif %}
+
+</section>
+{% endblock %}

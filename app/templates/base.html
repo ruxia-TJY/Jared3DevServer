@@ -15,9 +15,11 @@
       </a>
       <nav class="site-nav">
         <a href="{{ url_for('updatehub.index') }}">软件列表</a>
+        <a href="{{ url_for('apistack.api_doc') }}">API 文档</a>
         {% if current_user.is_authenticated %}
           {% if current_user.is_admin %}
           <a href="{{ url_for('user.list_users') }}">用户管理</a>
+          <a href="{{ url_for('apistack.manage') }}">API 管理</a>
           {% endif %}
           <a href="{{ url_for('user.edit', uid=current_user.id) }}">{{ current_user.username }}</a>
           <a href="{{ url_for('auth.logout') }}" class="nav-logout">退出</a>

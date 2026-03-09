@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}API 文档 · UpdateHub{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>API 文档</h1>
+    <p class="subtitle">
+      {% if current_user.is_authenticated %}
+        显示所有可访问的 API（共 {{ apis|length }} 个）
+      {% else %}
+        显示公开 API（<a href="{{ url_for('auth.login') }}" style="color:var(--primary);">登录</a>后可查看完整列表）
+      {% endif %}
+    </p>
+  </div>
+  {% if current_user.is_authenticated and current_user.is_admin %}
+  <a class="btn btn-sm" href="{{ url_for('apistack.manage') }}">管理 API</a>
+  {% endif %}
+</div>
+
+{% if apis %}
+<div class="doc-list">
+  {% for api in apis %}
+  <div class="doc-card">
+
+    <div class="doc-card-head">
+      <div class="doc-card-title">
+        <code class="api-name">{{ api.name }}</code>
+        <span class="doc-display-name">{{ api.display_name }}</span>
+      </div>
+      <div class="doc-card-badges">
+        <span class="doc-version">v{{ api.version }}</span>
+        {% if api.visibility == 'public' %}
+          <span class="access-badge access-public">公开</span>
+        {% else %}
+          <span class="access-badge access-restricted">私有 · 需 Token</span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if api.description %}
+    <p class="doc-desc">{{ api.description }}</p>
+    {% endif %}
+
+    <div style="margin-bottom:4px;">
+      <a href="{{ url_for('apistack.api_doc_detail', api_name=api.name) }}"
+         style="font-size:.85rem;color:var(--primary);">查看使用文档 →</a>
+    </div>
+
+    <div class="doc-endpoint">
+      <div class="doc-endpoint-row">
+        <span class="doc-method">GET</span>
+        <code class="doc-url">{{ request.host_url.rstrip('/') }}{{ api.url }}</code>
+        <a class="doc-try-link" href="{{ api.url }}" target="_blank"
+           {% if api.visibility == 'private' %}
+             title="需要在请求头中携带 X-API-Token"
+           {% endif %}>
+          试一试 ↗
+        </a>
+      </div>
+      <div class="doc-endpoint-row">
+        <span class="doc-method doc-method-info">INFO</span>
+        <code class="doc-url">{{ request.host_url.rstrip('/') }}/apistack/info/{{ api.name }}</code>
+        <a class="doc-try-link" href="{{ url_for('apistack.api_info', api_name=api.name) }}" target="_blank">
+          查看 ↗
+        </a>
+      </div>
+    </div>
+
+    {% if api.visibility == 'private' %}
+    <div class="doc-token-tip">
+      <span class="doc-tip-icon">🔒</span>
+      访问此 API 需在请求中携带有效 Token，可通过以下任一方式传入：
+      <ul class="doc-tip-list">
+        <li>请求头：<code>X-API-Token: &lt;token&gt;</code></li>
+        <li>Query 参数：<code>?token=&lt;token&gt;</code></li>
+        <li>JSON body：<code>{"token": "&lt;token&gt;"}</code></li>
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if api.author %}
+    <div class="doc-footer">
+      <span class="doc-author">作者：{{ api.author }}</span>
+      <span class="doc-updated">更新于 {{ api.updated_at.strftime('%Y-%m-%d') if api.updated_at else '—' }}</span>
+    </div>
+    {% endif %}
+
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">📄</div>
+  <p>暂无可用的 API</p>
+  {% if not current_user.is_authenticated %}
+  <p class="empty-tip"><a href="{{ url_for('auth.login') }}" style="color:var(--primary);">登录</a>后可查看更多</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}{{ api.display_name }} · API 文档 · UpdateHub{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('apistack.api_doc') }}">API 文档</a>
+  <span>/</span>
+  <span>{{ api.name }}</span>
+</div>
+
+<div class="page-header">
+  <div>
+    <h1>
+      <code class="api-name" style="font-size:1.4rem;">{{ api.name }}</code>
+      {{ api.display_name }}
+    </h1>
+    <p class="subtitle">
+      {% if api.visibility == 'public' %}
+        <span class="access-badge access-public">公开</span>
+      {% else %}
+        <span class="access-badge access-restricted">私有 · 需 Token</span>
+      {% endif %}
+      <span class="doc-version" style="margin-left:6px;">v{{ api.version }}</span>
+      {% if api.author %}
+        <span style="color:var(--text-muted);margin-left:8px;">作者：{{ api.author }}</span>
+      {% endif %}
+    </p>
+  </div>
+  {% if current_user.is_authenticated and current_user.is_admin %}
+  <a class="btn btn-sm" href="{{ url_for('apistack.manage') }}">编辑文档</a>
+  {% endif %}
+</div>
+
+{# 基本信息卡片 #}
+<div class="doc-info-card">
+  <div class="doc-endpoint">
+    <div class="doc-endpoint-row">
+      <span class="doc-method">GET</span>
+      <code class="doc-url">{{ request.host_url.rstrip('/') }}{{ api.url }}</code>
+    </div>
+    {% if api.description %}
+    <p style="margin-top:8px;font-size:.9rem;color:var(--text-muted);">{{ api.description }}</p>
+    {% endif %}
+  </div>
+
+  {% if api.visibility == 'private' %}
+  <div class="doc-token-tip" style="margin-top:12px;">
+    <span class="doc-tip-icon">🔒</span>
+    访问此 API 需在请求中携带有效 Token：
+    <ul class="doc-tip-list">
+      <li>请求头：<code>X-API-Token: &lt;token&gt;</code></li>
+      <li>Query 参数：<code>?token=&lt;token&gt;</code></li>
+      <li>JSON body：<code>{"token": "&lt;token&gt;"}</code></li>
+    </ul>
+  </div>
+  {% endif %}
+</div>
+
+{# 文档正文 #}
+{% if locked %}
+  <div class="empty-state" style="padding:48px 24px;">
+    <div class="empty-icon">🔒</div>
+    <p>此 API 为私有，请<a href="{{ url_for('auth.login') }}" style="color:var(--primary);">登录</a>后查看文档</p>
+  </div>
+
+{% elif doc_html %}
+  <div class="doc-content markdown-body">
+    {{ doc_html }}
+  </div>
+
+{% else %}
+  <div class="empty-state" style="padding:48px 24px;">
+    <div class="empty-icon">📝</div>
+    <p style="color:var(--text-muted);">暂无使用文档</p>
+    {% if current_user.is_authenticated and current_user.is_admin %}
+    <p style="margin-top:8px;"><a href="{{ url_for('apistack.manage') }}" style="color:var(--primary);">前往管理页面编写文档</a></p>
+    {% endif %}
+  </div>
+{% endif %}
+
+{% endblock %}
