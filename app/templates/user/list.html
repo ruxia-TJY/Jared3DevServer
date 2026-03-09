@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}用户管理 · UpdateHub{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>用户管理</h1>
+  <a class="btn btn-primary" href="{{ url_for('user.create') }}">+ 新建用户</a>
+</div>
+
+<section class="section">
+  <table class="version-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>用户名</th>
+        <th>邮箱</th>
+        <th>角色</th>
+        <th>状态</th>
+        <th>创建时间</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u.id }}</td>
+        <td><strong>{{ u.username }}</strong></td>
+        <td>{{ u.email or '—' }}</td>
+        <td>
+          {% if u.is_admin %}
+            <span class="role-badge role-admin">管理员</span>
+          {% else %}
+            <span class="role-badge role-user">普通用户</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if u.active %}
+            <span class="status-badge status-on">启用</span>
+          {% else %}
+            <span class="status-badge status-off">禁用</span>
+          {% endif %}
+        </td>
+        <td>{{ u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else '—' }}</td>
+        <td>
+          <div class="action-group">
+            <a class="btn btn-sm" href="{{ url_for('user.edit', uid=u.id) }}">编辑</a>
+            {% if u.id != current_user.id %}
+            <form method="post" action="{{ url_for('user.delete', uid=u.id) }}"
+                  onsubmit="return confirm('确认删除用户「{{ u.username }}」？')">
+              <button type="submit" class="btn btn-sm btn-danger">删除</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

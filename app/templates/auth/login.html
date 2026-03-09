@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}登录 · UpdateHub{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <span class="logo-icon">⬆</span>
+      <h1 class="auth-title">UpdateHub</h1>
+      <p class="auth-sub">请登录以继续</p>
+    </div>
+
+    <form method="post" class="auth-form">
+      <div class="form-group">
+        <label class="form-label" for="username">用户名</label>
+        <input class="form-input" type="text" id="username" name="username"
+               value="{{ request.form.get('username', '') }}"
+               autocomplete="username" autofocus required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">密码</label>
+        <input class="form-input" type="password" id="password" name="password"
+               autocomplete="current-password" required>
+      </div>
+
+      <div class="form-check">
+        <input type="checkbox" id="remember" name="remember">
+        <label for="remember">保持登录</label>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">登录</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

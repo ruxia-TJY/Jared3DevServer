@@ -9,23 +9,42 @@
 <body>
   <header class="site-header">
     <div class="container">
-      <a href="{{ url_for('web.index') }}" class="site-logo">
+      <a href="{{ url_for('updatehub.index') }}" class="site-logo">
         <span class="logo-icon">⬆</span>
         UpdateHub
       </a>
       <nav class="site-nav">
-        <a href="{{ url_for('web.index') }}">软件列表</a>
+        <a href="{{ url_for('updatehub.index') }}">软件列表</a>
+        {% if current_user.is_authenticated %}
+          {% if current_user.is_admin %}
+          <a href="{{ url_for('user.list_users') }}">用户管理</a>
+          {% endif %}
+          <a href="{{ url_for('user.edit', uid=current_user.id) }}">{{ current_user.username }}</a>
+          <a href="{{ url_for('auth.logout') }}" class="nav-logout">退出</a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}">登录</a>
+        {% endif %}
       </nav>
     </div>
   </header>
 
   <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="flash-list">
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+
     {% block content %}{% endblock %}
   </main>
 
   <footer class="site-footer">
     <div class="container">
-      <p>UpdateHub · 软件更新分发服务</p>
+      <p>&copy; Jared3Dev</p>
     </div>
   </footer>
 

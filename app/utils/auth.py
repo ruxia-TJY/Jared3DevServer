@@ -1,5 +1,6 @@
 from functools import wraps
-from flask import request, jsonify
+from flask import request, jsonify, redirect, url_for, abort
+from flask_login import current_user
 import config
 
 
@@ -14,5 +15,17 @@ def require_token(f):
         )
         if token != config.UPLOAD_TOKEN:
             return jsonify({'error': '无效的 Token'}), 401
+        return f(*args, **kwargs)
+    return decorated
+
+
+def admin_required(f):
+    """仅管理员可访问，未登录跳转登录页，非管理员返回 403。"""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for('auth.login', next=request.url))
+        if not current_user.is_admin:
+            abort(403)
         return f(*args, **kwargs)
     return decorated

@@ -44,6 +44,23 @@ def load_or_create_token():
 UPLOAD_TOKEN = load_or_create_token()
 
 # ──────────────────────────────────────────────
+# Flask Session 密钥（首次运行自动生成并保存）
+# ──────────────────────────────────────────────
+SECRET_KEY_FILE = os.path.join(os.path.dirname(__file__), 'data', '.secret_key')
+
+def load_or_create_secret_key():
+    os.makedirs(os.path.dirname(SECRET_KEY_FILE), exist_ok=True)
+    if os.path.exists(SECRET_KEY_FILE):
+        with open(SECRET_KEY_FILE, 'r') as f:
+            return f.read().strip()
+    key = secrets.token_hex(32)
+    with open(SECRET_KEY_FILE, 'w') as f:
+        f.write(key)
+    return key
+
+SECRET_KEY = load_or_create_secret_key()
+
+# ──────────────────────────────────────────────
 # 文件存储
 # ──────────────────────────────────────────────
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')

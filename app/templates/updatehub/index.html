@@ -11,7 +11,7 @@
 {% if apps %}
 <div class="app-grid">
   {% for app in apps %}
-  <a class="app-card" href="{{ url_for('web.app_detail', app_name=app.name) }}">
+  <a class="app-card" href="{{ url_for('updatehub.app_detail', app_name=app.name) }}">
     <div class="app-card-header">
       <span class="app-icon">📦</span>
       <div>

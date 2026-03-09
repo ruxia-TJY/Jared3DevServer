@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% if action == 'create' %}
+  {% set page_title = '新建用户' %}
+{% else %}
+  {% set page_title = '编辑用户 · ' + u.username %}
+{% endif %}
+
+{% block title %}{{ page_title }} · UpdateHub{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb">
+    {% if current_user.is_admin %}
+    <a href="{{ url_for('user.list_users') }}">用户管理</a>
+    <span>/</span>
+    {% endif %}
+    <span>{{ page_title }}</span>
+  </div>
+  <h1>{{ page_title }}</h1>
+</div>
+
+<section class="section">
+  <form method="post" class="user-form">
+
+    {# 用户名：创建时必填；编辑时管理员可改，普通用户只读 #}
+    <div class="form-group">
+      <label class="form-label" for="username">用户名</label>
+      {% if action == 'create' or current_user.is_admin %}
+        <input class="form-input" type="text" id="username" name="username" required
+               value="{{ form.get('username', u.username if u is defined else '') }}">
+      {% else %}
+        <input class="form-input" type="text" value="{{ u.username }}" disabled>
+      {% endif %}
+    </div>
+
+    {# 邮箱：所有人可改 #}
+    <div class="form-group">
+      <label class="form-label" for="email">邮箱 <span class="form-optional">（选填）</span></label>
+      <input class="form-input" type="email" id="email" name="email"
+             value="{{ form.get('email', u.email if (u is defined and u.email) else '') }}">
+    </div>
+
+    {# 密码 #}
+    <div class="form-group">
+      <label class="form-label" for="password">
+        密码{% if action == 'edit' %} <span class="form-optional">（留空则不修改）</span>{% endif %}
+      </label>
+      <input class="form-input" type="password" id="password" name="password"
+             autocomplete="new-password"
+             {% if action == 'create' %}required{% endif %}>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="password2">确认密码</label>
+      <input class="form-input" type="password" id="password2" name="password2"
+             autocomplete="new-password"
+             {% if action == 'create' %}required{% endif %}>
+    </div>
+
+    {# 角色 & 状态：仅管理员可见 #}
+    {% if current_user.is_admin %}
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="role">角色</label>
+        <select class="form-input" id="role" name="role">
+          <option value="user"  {% if (form.get('role') or (u.role if u is defined else '')) == 'user'  %}selected{% endif %}>普通用户</option>
+          <option value="admin" {% if (form.get('role') or (u.role if u is defined else '')) == 'admin' %}selected{% endif %}>管理员</option>
+        </select>
+      </div>
+
+      <div class="form-group form-group--checkbox">
+        <label class="form-label">状态</label>
+        <div class="form-check">
+          <input type="checkbox" id="active" name="active"
+                 {% if action == 'create' %}checked
+                 {% elif u is defined and u.active %}checked{% endif %}>
+          <label for="active">启用账号</label>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">保存</button>
+      {% if current_user.is_admin %}
+        <a class="btn btn-sm" href="{{ url_for('user.list_users') }}">取消</a>
+      {% else %}
+        <a class="btn btn-sm" href="{{ url_for('updatehub.index') }}">取消</a>
+      {% endif %}
+    </div>
+
+  </form>
+</section>
+{% endblock %}

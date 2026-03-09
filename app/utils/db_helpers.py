@@ -1,7 +1,7 @@
 from packaging.version import Version, InvalidVersion
 import config
 from app.extensions import db
-from app.models import AppVersion
+from app.updatehub.models import AppVersion
 
 
 def get_latest_row(app_name: str, platform: str):
