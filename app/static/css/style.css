@@ -54,11 +54,20 @@ main.container { padding-top: 36px; padding-bottom: 48px; }
 
 .app-card { display: block; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); transition: box-shadow .2s, transform .2s; cursor: pointer; }
 .app-card:hover { box-shadow: 0 4px 24px rgba(37,99,235,.12); transform: translateY(-2px); }
+.app-card--locked { opacity: .75; }
+.app-card--locked:hover { box-shadow: var(--shadow); transform: none; }
+.locked-tip { font-size: .85rem; color: var(--text-muted); margin-top: 4px; }
 
 .app-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .app-icon { font-size: 2rem; }
 .app-name { font-size: 1.1rem; font-weight: 600; }
 .version-count { font-size: .8rem; color: var(--text-muted); }
+
+/* ── Access badges ── */
+.access-badge { margin-left: auto; display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: .7rem; font-weight: 600; white-space: nowrap; }
+.access-public     { background: #dcfce7; color: #15803d; }
+.access-protected  { background: #e0e7ff; color: #4338ca; }
+.access-restricted { background: #fee2e2; color: #dc2626; }
 
 .platform-list { display: flex; flex-direction: column; gap: 8px; }
 .platform-badge { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-radius: 6px; font-size: .85rem; }
@@ -75,7 +84,7 @@ main.container { padding-top: 36px; padding-bottom: 48px; }
 
 /* ── Section ── */
 .section { margin-bottom: 48px; }
-.section-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.section-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
 
 /* ── Latest Grid ── */
 .latest-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }

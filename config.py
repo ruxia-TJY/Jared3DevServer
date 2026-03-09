@@ -1,15 +1,21 @@
+"""
+config.py - 项目全局配置。
+
+敏感数据（数据库密码）直接填写在此文件，
+config.py 已加入 .gitignore，不会提交到版本库。
+
+运行时自动生成的持久化文件：
+  data/.token      - 上传 Token
+  data/.secret_key - Flask Session 密钥
+"""
 import os
 import secrets
 from urllib.parse import quote_plus
 
-# ──────────────────────────────────────────────
-# 项目名称
-# ──────────────────────────────────────────────
+# ── 项目名称 ────────────────────────────────────────────────
 APP_NAME = 'UpdateHub'
 
-# ──────────────────────────────────────────────
-# MySQL 数据库配置
-# ──────────────────────────────────────────────
+# ── MySQL 数据库配置 ─────────────────────────────────────────
 DB_HOST     = '127.0.0.1'
 DB_PORT     = 3306
 DB_USER     = 'root'
@@ -20,16 +26,19 @@ SQLALCHEMY_DATABASE_URI = (
     f'mysql+pymysql://{quote_plus(DB_USER)}:{quote_plus(DB_PASSWORD)}'
     f'@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4'
 )
-SQLALCHEMY_ENGINE_OPTIONS = {}
-
+SQLALCHEMY_ENGINE_OPTIONS      = {}
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-# ──────────────────────────────────────────────
-# 上传 Token（首次运行自动生成并保存）
-# ──────────────────────────────────────────────
+# ── 上传 Token ───────────────────────────────────────────────
 TOKEN_FILE = os.path.join(os.path.dirname(__file__), 'data', '.token')
 
-def load_or_create_token():
+
+def load_or_create_token() -> str:
+    """从文件加载上传 Token；若文件不存在则生成新 Token 并保存。
+
+    Returns:
+        64 位十六进制字符串 Token。
+    """
     os.makedirs(os.path.dirname(TOKEN_FILE), exist_ok=True)
     if os.path.exists(TOKEN_FILE):
         with open(TOKEN_FILE, 'r') as f:
@@ -41,14 +50,19 @@ def load_or_create_token():
     print(f"[{APP_NAME}] Token 已保存至：{TOKEN_FILE}\n")
     return token
 
+
 UPLOAD_TOKEN = load_or_create_token()
 
-# ──────────────────────────────────────────────
-# Flask Session 密钥（首次运行自动生成并保存）
-# ──────────────────────────────────────────────
+# ── Flask Session 密钥 ───────────────────────────────────────
 SECRET_KEY_FILE = os.path.join(os.path.dirname(__file__), 'data', '.secret_key')
 
-def load_or_create_secret_key():
+
+def load_or_create_secret_key() -> str:
+    """从文件加载 Flask SECRET_KEY；若文件不存在则生成新密钥并保存。
+
+    Returns:
+        64 位十六进制字符串密钥。
+    """
     os.makedirs(os.path.dirname(SECRET_KEY_FILE), exist_ok=True)
     if os.path.exists(SECRET_KEY_FILE):
         with open(SECRET_KEY_FILE, 'r') as f:
@@ -58,21 +72,22 @@ def load_or_create_secret_key():
         f.write(key)
     return key
 
+
 SECRET_KEY = load_or_create_secret_key()
 
-# ──────────────────────────────────────────────
-# 文件存储
-# ──────────────────────────────────────────────
+# ── 文件存储 ─────────────────────────────────────────────────
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 DATA_FOLDER   = os.path.join(os.path.dirname(__file__), 'data')
 
+#: 支持的平台标识符
 ALLOWED_PLATFORMS = {'windows', 'mac', 'linux'}
 
-# 各平台允许上传的文件扩展名
+#: 各平台允许上传的文件扩展名白名单
 ALLOWED_EXTENSIONS = {
     'windows': {'.exe', '.zip', '.msi'},
     'mac':     {'.dmg', '.pkg', '.zip'},
     'linux':   {'.tar.gz', '.deb', '.rpm', '.AppImage', '.zip'},
 }
 
-MAX_CONTENT_LENGTH = 2 * 1024 * 1024 * 1024  # 2 GB
+#: 单次上传文件体积上限（字节），默认 2 GB
+MAX_CONTENT_LENGTH = 2 * 1024 * 1024 * 1024

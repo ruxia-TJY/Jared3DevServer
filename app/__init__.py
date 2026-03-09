@@ -1,3 +1,11 @@
+"""
+app/__init__.py - Flask 应用工厂。
+
+负责创建 Flask 实例、加载配置、初始化扩展，并注册所有蓝图。
+调用方式：
+    from app import create_app
+    app = create_app()
+"""
 import os
 from flask import Flask
 from app.extensions import db, login_manager
@@ -5,7 +13,17 @@ import config
 
 
 def create_app() -> Flask:
-    """应用工厂函数，创建并配置 Flask 实例。"""
+    """创建并配置 Flask 应用实例（应用工厂模式）。
+
+    执行步骤：
+        1. 从 config 模块读取配置项；
+        2. 初始化 SQLAlchemy 和 Flask-Login；
+        3. 注册 user_loader 回调；
+        4. 在应用上下文中建表并注册三个蓝图。
+
+    Returns:
+        配置完毕、可直接运行的 Flask 实例。
+    """
     flask_app = Flask(__name__)
     flask_app.config['SECRET_KEY']                     = config.SECRET_KEY
     flask_app.config['MAX_CONTENT_LENGTH']             = config.MAX_CONTENT_LENGTH
@@ -21,7 +39,15 @@ def create_app() -> Flask:
 
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        """Flask-Login 用户加载回调，通过 ID 从数据库查询用户。
+
+        Args:
+            user_id: 会话中存储的用户 ID 字符串。
+
+        Returns:
+            对应的 User 实例，若不存在则返回 None。
+        """
+        return db.session.get(User, int(user_id))
 
     with flask_app.app_context():
         db.create_all()

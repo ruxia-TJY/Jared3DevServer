@@ -1,3 +1,13 @@
+"""
+app/user/views.py - 用户管理蓝图路由。
+
+路由：
+    GET       /user/                    用户列表（仅管理员）
+    GET/POST  /user/create              创建用户（仅管理员）
+    GET/POST  /user/<uid>/edit          编辑用户（管理员可编辑任意用户；普通用户仅限自己）
+    POST      /user/<uid>/delete        删除用户（仅管理员，不能删除自己）
+    GET       /user/profile             跳转到当前用户编辑页
+"""
 from flask import render_template, redirect, url_for, request, flash, abort
 from flask_login import login_required, current_user
 from app.user import user
@@ -6,20 +16,30 @@ from app.extensions import db
 from app.utils.auth import admin_required
 
 
-# ── 用户列表（管理员）──────────────────────────────────────
-
 @user.route('/')
 @admin_required
 def list_users():
+    """用户列表页（仅管理员可访问）。
+
+    Returns:
+        渲染 ``user/list.html``，传入按创建时间降序排列的用户列表。
+    """
     users = User.query.order_by(User.created_at.desc()).all()
     return render_template('user/list.html', users=users)
 
 
-# ── 创建用户（管理员）──────────────────────────────────────
-
 @user.route('/create', methods=['GET', 'POST'])
 @admin_required
 def create():
+    """创建新用户（仅管理员可访问）。
+
+    GET : 渲染空白创建表单。
+    POST: 校验表单后创建用户并提交数据库，成功后跳转到用户列表。
+
+    Returns:
+        成功时重定向到 ``user.list_users``；
+        失败时重新渲染 ``user/form.html`` 并通过 flash 显示错误。
+    """
     if request.method == 'POST':
         error = _validate_create_form()
         if error:
@@ -41,11 +61,25 @@ def create():
     return render_template('user/form.html', action='create', form={})
 
 
-# ── 编辑用户（管理员编辑任意用户；普通用户编辑自己）──────────
-
 @user.route('/<int:uid>/edit', methods=['GET', 'POST'])
 @login_required
 def edit(uid):
+    """编辑用户信息。
+
+    管理员可编辑任意用户（含用户名、角色、状态）；
+    普通用户只能编辑自己（仅邮箱和密码）。
+
+    Args:
+        uid: 目标用户的数据库 ID。
+
+    Returns:
+        成功时管理员跳转到 ``user.list_users``，普通用户跳转到 ``user.profile``；
+        失败时重新渲染 ``user/form.html``。
+
+    Raises:
+        403: 普通用户尝试编辑他人信息时中止。
+        404: 目标用户不存在时中止。
+    """
     u = User.query.get_or_404(uid)
     # 普通用户只能编辑自己
     if not current_user.is_admin and current_user.id != uid:
@@ -88,11 +122,20 @@ def edit(uid):
     return render_template('user/form.html', action='edit', u=u, form={})
 
 
-# ── 删除用户（管理员，不能删自己）─────────────────────────
-
 @user.route('/<int:uid>/delete', methods=['POST'])
 @admin_required
 def delete(uid):
+    """删除用户（仅管理员，不能删除当前登录账号）。
+
+    Args:
+        uid: 目标用户的数据库 ID。
+
+    Returns:
+        重定向到 ``user.list_users``。
+
+    Raises:
+        404: 目标用户不存在时中止。
+    """
     if uid == current_user.id:
         flash('不能删除当前登录账号', 'error')
         return redirect(url_for('user.list_users'))
@@ -103,17 +146,28 @@ def delete(uid):
     return redirect(url_for('user.list_users'))
 
 
-# ── 个人资料（当前登录用户）───────────────────────────────
-
 @user.route('/profile')
 @login_required
 def profile():
+    """当前登录用户的个人资料页，重定向到自身编辑页。
+
+    Returns:
+        重定向到 ``user.edit``，uid 为当前用户 ID。
+    """
     return redirect(url_for('user.edit', uid=current_user.id))
 
 
-# ── 内部：校验创建表单 ──────────────────────────────────
-
 def _validate_create_form():
+    """校验创建用户表单数据。
+
+    从 ``request.form`` 读取字段并依次验证：
+        - 用户名非空且不超过 64 字符且唯一；
+        - 密码非空且两次输入一致；
+        - 邮箱（可选）若填写则必须唯一。
+
+    Returns:
+        校验通过时返回 ``None``；失败时返回错误描述字符串。
+    """
     username = request.form.get('username', '').strip()
     password = request.form.get('password', '')
     password2 = request.form.get('password2', '')

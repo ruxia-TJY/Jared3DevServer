@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}无访问权限 · UpdateHub{% endblock %}
+
+{% block content %}
+<div class="empty-state">
+  <div class="empty-icon">🔒</div>
+  <h2 style="margin-bottom:8px;">无访问权限</h2>
+  <p>软件 <strong>{{ app_name }}</strong> 需要授权才能访问。</p>
+  <p style="margin-top:6px;font-size:.875rem;color:var(--text-muted);">
+    请联系管理员申请权限。
+  </p>
+  <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;">
+    <a class="btn btn-primary" href="{{ url_for('updatehub.index') }}">返回列表</a>
+  </div>
+</div>
+{% endblock %}

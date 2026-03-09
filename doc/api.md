@@ -18,13 +18,28 @@ UpdateHub 用于管理多个软件、多个平台的版本发布与下载。支�
 
 ## 认证
 
-需要认证的接口通过以下任一方式传入 Token：
+### API Token（管理类接口）
+
+需要 Token 的接口通过以下任一方式传入：
 
 - **HTTP Header：** `X-Upload-Token: <token>`
 - **Form 字段：** `token=<token>`
 - **JSON 字段：** `{ "token": "<token>" }`
 
 Token 首次启动时自动生成，保存于 `data/.token`。
+
+### 访问控制（查询/下载类接口）
+
+软件支持三种访问级别，不同级别对未认证用户的行为不同：
+
+| 访问级别 | 说明 | API 未认证时返回 |
+|----------|------|-----------------|
+| `public` | 无需登录 | 正常返回数据 |
+| `protected` | 需要登录（任意已认证用户） | `401` |
+| `restricted` | 仅指定用户及管理员 | `401` / `403` |
+
+Web 页面通过 Session Cookie 认证（`POST /auth/login`）；
+API 客户端若需访问受保护软件，须先通过登录接口获取 Session Cookie，或联系管理员将该软件设为 `public`。
 
 ---
 
@@ -36,18 +51,20 @@ Token 首次启动时自动生成，保存于 `data/.token`。
 GET /updatehub/api/apps
 ```
 
+**说明：** 列出所有已注册软件及各平台最新版本，**不过滤**访问级别（客户端自行判断）。
+
 **响应示例**
 
 ```json
 {
   "apps": [
     {
-      "app": "my_app",
+      "app": "MyEditor",
       "latest": {
-        "windows": "1.0.1",
-        "linux": "1.0.0"
+        "windows": "2.1.0",
+        "linux": "2.0.0"
       },
-      "version_count": 2
+      "version_count": 5
     }
   ]
 }
@@ -72,16 +89,16 @@ GET /updatehub/api/<app>/latest?platform=windows
 
 ```json
 {
-  "app": "my_app",
+  "app": "MyEditor",
   "platform": "windows",
-  "version": "1.0.1",
+  "version": "2.1.0",
   "source": "github_proxy",
   "release_notes": "修复若干问题",
   "release_date": "2026-03-08",
   "file_size": 12345678,
   "sha256": "abc123...",
   "mandatory": false,
-  "download_url": "/updatehub/api/my_app/download?platform=windows&version=1.0.1"
+  "download_url": "/updatehub/api/MyEditor/download?platform=windows&version=2.1.0"
 }
 ```
 
@@ -89,19 +106,18 @@ GET /updatehub/api/<app>/latest?platform=windows
 
 ```json
 {
-  "app": "my_app",
+  "app": "MyEditor",
   "latest": {
     "windows": {
-      "version": "1.0.1",
+      "version": "2.1.0",
       "source": "github_proxy",
       "release_notes": "修复若干问题",
       "release_date": "2026-03-08",
       "file_size": 12345678,
       "sha256": "abc123...",
       "mandatory": false,
-      "download_url": "/updatehub/api/my_app/download?platform=windows&version=1.0.1"
-    },
-    "linux": { "..." : "..." }
+      "download_url": "/updatehub/api/MyEditor/download?platform=windows&version=2.1.0"
+    }
   }
 }
 ```
@@ -126,13 +142,13 @@ GET /updatehub/api/<app>/check?platform=windows&version=1.0.0
 ```json
 {
   "has_update": true,
-  "latest_version": "1.0.1",
+  "latest_version": "2.1.0",
   "mandatory": false,
   "release_notes": "修复若干问题",
   "release_date": "2026-03-08",
   "file_size": 12345678,
   "sha256": "abc123...",
-  "download_url": "/updatehub/api/my_app/download?platform=windows&version=1.0.1"
+  "download_url": "/updatehub/api/MyEditor/download?platform=windows&version=2.1.0"
 }
 ```
 
@@ -141,7 +157,7 @@ GET /updatehub/api/<app>/check?platform=windows&version=1.0.0
 ```json
 {
   "has_update": false,
-  "latest_version": "1.0.1"
+  "latest_version": "2.1.0"
 }
 ```
 
@@ -150,7 +166,7 @@ GET /updatehub/api/<app>/check?platform=windows&version=1.0.0
 ### 4. 下载文件
 
 ```
-GET /updatehub/api/<app>/download?platform=windows&version=1.0.1
+GET /updatehub/api/<app>/download?platform=windows&version=2.1.0
 ```
 
 **Query 参数**
@@ -180,15 +196,15 @@ GET /updatehub/api/<app>/versions
 
 ```json
 {
-  "app": "my_app",
+  "app": "MyEditor",
   "latest": {
-    "windows": "1.0.1"
+    "windows": "2.1.0"
   },
   "versions": {
-    "1.0.1": {
+    "2.1.0": {
       "windows": {
         "source": "github_proxy",
-        "github_url": "https://github.com/user/repo/releases/download/v1.0.1/app.exe",
+        "github_url": "https://github.com/user/repo/releases/download/v2.1.0/app.exe",
         "file_size": 12345678,
         "sha256": "abc123...",
         "release_notes": "修复若干问题",
@@ -196,10 +212,10 @@ GET /updatehub/api/<app>/versions
         "mandatory": false
       }
     },
-    "1.0.0": {
+    "2.0.0": {
       "windows": {
         "source": "local",
-        "filename": "my_app-1.0.0-windows.exe",
+        "filename": "MyEditor-2.0.0-windows.exe",
         "file_size": 11000000,
         "sha256": "def456...",
         "release_notes": "初始版本",
@@ -244,13 +260,13 @@ POST /updatehub/api/<app>/upload
 **curl 示例**
 
 ```bash
-curl -X POST http://localhost:5000/updatehub/api/my_app/upload \
+curl -X POST http://localhost:5000/updatehub/api/MyEditor/upload \
   -H "X-Upload-Token: <token>" \
   -F "platform=windows" \
-  -F "version=1.0.1" \
+  -F "version=2.1.0" \
   -F "release_notes=修复若干问题" \
   -F "mandatory=false" \
-  -F "file=@my_app-1.0.1.exe"
+  -F "file=@MyEditor-2.1.0.exe"
 ```
 
 **响应示例**
@@ -258,10 +274,10 @@ curl -X POST http://localhost:5000/updatehub/api/my_app/upload \
 ```json
 {
   "success": true,
-  "app": "my_app",
-  "version": "1.0.1",
+  "app": "MyEditor",
+  "version": "2.1.0",
   "platform": "windows",
-  "filename": "my_app-1.0.1-windows.exe",
+  "filename": "MyEditor-2.1.0-windows.exe",
   "file_size": 12345678,
   "sha256": "abc123..."
 }
@@ -284,7 +300,7 @@ POST /updatehub/api/<app>/register
 | 字段 | 必填 | 说明 |
 |------|------|------|
 | `platform` | 是 | `windows` / `mac` / `linux` |
-| `version` | 是 | 版本号，如 `1.0.1` |
+| `version` | 是 | 版本号，如 `2.1.0` |
 | `github_url` | 是 | GitHub Release 文件直链，必须以 `https://github.com/` 开头 |
 | `source` | 否 | `github`（重定向）或 `github_proxy`（中转代理），默认 `github_proxy` |
 | `release_notes` | 否 | 更新说明 |
@@ -296,26 +312,26 @@ POST /updatehub/api/<app>/register
 
 ```bash
 # 中转代理（推荐，隐藏 GitHub 源地址）
-curl -X POST http://localhost:5000/updatehub/api/my_app/register \
+curl -X POST http://localhost:5000/updatehub/api/MyEditor/register \
   -H "X-Upload-Token: <token>" \
   -H "Content-Type: application/json" \
   -d '{
     "platform": "windows",
-    "version": "1.0.1",
-    "github_url": "https://github.com/user/repo/releases/download/v1.0.1/app.exe",
+    "version": "2.1.0",
+    "github_url": "https://github.com/user/repo/releases/download/v2.1.0/app.exe",
     "source": "github_proxy",
     "release_notes": "修复若干问题",
     "mandatory": false
   }'
 
 # 直接重定向（客户端直连 GitHub）
-curl -X POST http://localhost:5000/updatehub/api/my_app/register \
+curl -X POST http://localhost:5000/updatehub/api/MyEditor/register \
   -H "X-Upload-Token: <token>" \
   -H "Content-Type: application/json" \
   -d '{
     "platform": "linux",
-    "version": "1.0.1",
-    "github_url": "https://github.com/user/repo/releases/download/v1.0.1/app.tar.gz",
+    "version": "2.1.0",
+    "github_url": "https://github.com/user/repo/releases/download/v2.1.0/app.tar.gz",
     "source": "github"
   }'
 ```
@@ -325,11 +341,11 @@ curl -X POST http://localhost:5000/updatehub/api/my_app/register \
 ```json
 {
   "success": true,
-  "app": "my_app",
-  "version": "1.0.1",
+  "app": "MyEditor",
+  "version": "2.1.0",
   "platform": "windows",
   "source": "github_proxy",
-  "github_url": "https://github.com/user/repo/releases/download/v1.0.1/app.exe"
+  "github_url": "https://github.com/user/repo/releases/download/v2.1.0/app.exe"
 }
 ```
 
@@ -338,10 +354,10 @@ curl -X POST http://localhost:5000/updatehub/api/my_app/register \
 ### 8. 删除版本
 
 ```
-DELETE /updatehub/api/<app>/delete?platform=windows&version=1.0.0
+DELETE /updatehub/api/<app>/delete?platform=windows&version=2.0.0
 ```
 
-**认证：** 需要 Token（放在 Header 中）
+**认证：** 需要 Token
 
 **Query 参数**
 
@@ -357,7 +373,7 @@ DELETE /updatehub/api/<app>/delete?platform=windows&version=1.0.0
 
 ```bash
 curl -X DELETE \
-  "http://localhost:5000/updatehub/api/my_app/delete?platform=windows&version=1.0.0" \
+  "http://localhost:5000/updatehub/api/MyEditor/delete?platform=windows&version=2.0.0" \
   -H "X-Upload-Token: <token>"
 ```
 
@@ -366,7 +382,142 @@ curl -X DELETE \
 ```json
 {
   "success": true,
-  "message": "my_app v1.0.0 (windows) 已删除"
+  "message": "MyEditor v2.0.0 (windows) 已删除"
+}
+```
+
+---
+
+### 9. 查询访问控制配置
+
+```
+GET /updatehub/api/<app>/access
+```
+
+**认证：** 需要 Token
+
+**响应示例（public）**
+
+```json
+{
+  "app": "MyEditor",
+  "access_level": "public",
+  "users": []
+}
+```
+
+**响应示例（restricted）**
+
+```json
+{
+  "app": "QuickNote",
+  "access_level": "restricted",
+  "users": [
+    { "user_id": 2, "username": "alice" }
+  ]
+}
+```
+
+---
+
+### 10. 修改访问级别
+
+```
+POST /updatehub/api/<app>/access
+```
+
+**认证：** 需要 Token
+
+**Content-Type：** `application/json`
+
+**JSON 参数**
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `access_level` | 是 | `public` / `protected` / `restricted` |
+
+**curl 示例**
+
+```bash
+curl -X POST http://localhost:5000/updatehub/api/QuickNote/access \
+  -H "X-Upload-Token: <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"access_level": "restricted"}'
+```
+
+**响应示例**
+
+```json
+{
+  "success": true,
+  "app": "QuickNote",
+  "access_level": "restricted"
+}
+```
+
+---
+
+### 11. 授权用户访问受限软件
+
+```
+POST /updatehub/api/<app>/access/users
+```
+
+**认证：** 需要 Token
+
+**Content-Type：** `application/json`
+
+**JSON 参数**（二选一）
+
+| 字段 | 说明 |
+|------|------|
+| `username` | 通过用户名指定用户 |
+| `user_id` | 通过用户 ID 指定用户 |
+
+**curl 示例**
+
+```bash
+curl -X POST http://localhost:5000/updatehub/api/QuickNote/access/users \
+  -H "X-Upload-Token: <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "alice"}'
+```
+
+**响应示例**
+
+```json
+{
+  "success": true,
+  "app": "QuickNote",
+  "username": "alice"
+}
+```
+
+---
+
+### 12. 撤销用户访问权限
+
+```
+DELETE /updatehub/api/<app>/access/users/<user_id>
+```
+
+**认证：** 需要 Token
+
+**curl 示例**
+
+```bash
+curl -X DELETE \
+  http://localhost:5000/updatehub/api/QuickNote/access/users/2 \
+  -H "X-Upload-Token: <token>"
+```
+
+**响应示例**
+
+```json
+{
+  "success": true,
+  "app": "QuickNote",
+  "user_id": 2
 }
 ```
 
@@ -374,11 +525,12 @@ curl -X DELETE \
 
 ## 错误码
 
-| HTTP 状态码 | 说明 |
+| HTTP 状态码 | 场景 |
 |-------------|------|
 | `400` | 请求参数错误（平台非法、版本号格式错误、文件类型不支持等） |
-| `401` | Token 无效或未提供 |
-| `404` | 软件或版本不存在 |
+| `401` | Token 无效 / 未提供；或访问受保护软件时未登录 |
+| `403` | 已登录但无权访问该受限软件 |
+| `404` | 软件或版本不存在；用户不存在 |
 | `502` | 中转下载时 GitHub 返回错误 |
 
 ---
@@ -396,5 +548,6 @@ uploads/
         └── <app>-<version>-linux.tar.gz
 
 data/
-└── .token      # 上传 Token（请勿泄露）
+├── .token       # 上传 Token（请勿泄露）
+└── .secret_key  # Flask Session 密钥（请勿泄露）
 ```

@@ -1,0 +1,22 @@
+<a class="app-card" href="{{ url_for('updatehub.app_detail', app_name=app.name) }}">
+  <div class="app-card-header">
+    <span class="app-icon">📦</span>
+    <div>
+      <h2 class="app-name">{{ app.name }}</h2>
+      <span class="version-count">{{ app.version_count }} 个版本</span>
+    </div>
+  </div>
+  <div class="platform-list">
+    {% for platform, version in app.latest.items() %}
+    <div class="platform-badge platform-{{ platform }}">
+      <span class="platform-name">
+        {% if platform == 'windows' %}🪟{% elif platform == 'mac' %}🍎{% else %}🐧{% endif %}
+        {{ platform }}
+      </span>
+      <span class="platform-version">v{{ version }}</span>
+    </div>
+    {% else %}
+    <span class="no-version">暂无版本</span>
+    {% endfor %}
+  </div>
+</a>

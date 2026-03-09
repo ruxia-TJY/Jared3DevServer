@@ -1,3 +1,24 @@
+"""
+app/updatehub/views.py - updatehub 蓝图所有路由。
+
+API 端点（JSON）：
+    GET  /api/apps                          列出所有软件
+    GET  /api/<app>/latest                  最新版本
+    GET  /api/<app>/versions                所有版本
+    GET  /api/<app>/check                   更新检查
+    GET  /api/<app>/download                下载文件
+    POST /api/<app>/upload          [Token] 上传本地版本
+    POST /api/<app>/register        [Token] 注册 GitHub Release
+    DEL  /api/<app>/delete          [Token] 删除版本
+    GET  /api/<app>/access          [Token] 查询访问配置
+    POST /api/<app>/access          [Token] 修改访问级别
+    POST /api/<app>/access/users    [Token] 授权用户
+    DEL  /api/<app>/access/users/<id>[Token] 撤销授权
+
+HTML 页面：
+    GET  /          软件列表（按访问级别分组）
+    GET  /<app>     软件详情（版本列表、SHA256、下载）
+"""
 import os
 from datetime import date
 
@@ -10,8 +31,10 @@ from packaging.version import Version, InvalidVersion
 from werkzeug.utils import secure_filename
 
 from app.updatehub import updatehub
-from app.updatehub.models import AppVersion
+from app.updatehub.models import AppVersion, AppConfig, AppAccess, ACCESS_PUBLIC, ACCESS_PROTECTED, ACCESS_RESTRICTED
+from app.updatehub.access import api_check, page_check, get_access_level, has_access
 from app.extensions import db
+from app.user.models import User
 from app.utils.auth import require_token
 from app.utils.validators import (
     is_valid_app_name, is_valid_version, is_valid_platform, file_extension_allowed,
@@ -49,6 +72,10 @@ def get_latest(app_name):
     if not is_valid_app_name(app_name):
         return jsonify({'error': '非法的软件名称'}), 400
 
+    err = api_check(app_name)
+    if err:
+        return err
+
     if not AppVersion.query.filter_by(app_name=app_name).first():
         return jsonify({'error': '软件不存在'}), 404
 
@@ -76,6 +103,10 @@ def list_versions(app_name):
     if not is_valid_app_name(app_name):
         return jsonify({'error': '非法的软件名称'}), 400
 
+    err = api_check(app_name)
+    if err:
+        return err
+
     if not AppVersion.query.filter_by(app_name=app_name).first():
         return jsonify({'error': '软件不存在'}), 404
 
@@ -102,6 +133,10 @@ def check_update(app_name):
     """
     if not is_valid_app_name(app_name):
         return jsonify({'error': '非法的软件名称'}), 400
+
+    err = api_check(app_name)
+    if err:
+        return err
 
     platform        = request.args.get('platform', '').lower()
     current_version = request.args.get('version', '')
@@ -143,6 +178,10 @@ def download_update(app_name):
     """
     if not is_valid_app_name(app_name):
         abort(400)
+
+    err = api_check(app_name)
+    if err:
+        return err
 
     platform = request.args.get('platform', '').lower()
     version  = request.args.get('version', '')
@@ -372,17 +411,24 @@ def delete_version(app_name):
 
 @updatehub.route('/', methods=['GET'])
 def index():
-    """软件列表页。"""
+    """软件列表页。按访问级别分组，仅展示当前用户有权访问的软件。"""
     app_names = [r[0] for r in db.session.query(AppVersion.app_name).distinct().all()]
-    apps = []
+
+    groups = {'public': [], 'protected': [], 'restricted': []}
     for name in sorted(app_names):
+        level = get_access_level(name)
+        if not has_access(name):
+            continue
         count = AppVersion.query.filter_by(app_name=name).count()
-        apps.append({
+        groups[level].append({
             'name':          name,
             'latest':        get_latest_dict(name),
             'version_count': count,
+            'access_level':  level,
         })
-    return render_template('updatehub/index.html', apps=apps)
+
+    total = sum(len(v) for v in groups.values())
+    return render_template('updatehub/index.html', groups=groups, total=total)
 
 
 @updatehub.route('/<app_name>', methods=['GET'])
@@ -393,6 +439,10 @@ def app_detail(app_name):
 
     if not AppVersion.query.filter_by(app_name=app_name).first():
         return render_template('updatehub/404.html'), 404
+
+    err = page_check(app_name)
+    if err:
+        return err
 
     latest = {}
     for plat in config.ALLOWED_PLATFORMS:
@@ -412,4 +462,95 @@ def app_detail(app_name):
                            app_name=app_name,
                            latest=latest,
                            versions=versions,
-                           platforms=sorted(config.ALLOWED_PLATFORMS))
+                           platforms=sorted(config.ALLOWED_PLATFORMS),
+                           access_level=get_access_level(app_name))
+
+
+# ── 访问控制管理（需要 Token）──────────────────────────────
+
+@updatehub.route('/api/<app_name>/access', methods=['GET'])
+@require_token
+def get_access(app_name):
+    """获取软件访问控制配置及授权用户列表。"""
+    if not is_valid_app_name(app_name):
+        return jsonify({'error': '非法的软件名称'}), 400
+
+    level = get_access_level(app_name)
+    users = []
+    if level == ACCESS_RESTRICTED:
+        rows = AppAccess.query.filter_by(app_name=app_name).all()
+        users = [{'user_id': r.user_id, 'username': r.user.username} for r in rows]
+
+    return jsonify({'app': app_name, 'access_level': level, 'users': users})
+
+
+@updatehub.route('/api/<app_name>/access', methods=['POST'])
+@require_token
+def set_access(app_name):
+    """
+    设置软件访问级别。
+    JSON body: {"access_level": "public" | "protected" | "restricted"}
+    """
+    if not is_valid_app_name(app_name):
+        return jsonify({'error': '非法的软件名称'}), 400
+
+    body  = request.get_json(silent=True) or {}
+    level = body.get('access_level', '')
+
+    if level not in (ACCESS_PUBLIC, ACCESS_PROTECTED, ACCESS_RESTRICTED):
+        return jsonify({'error': f'access_level 必须为 public / protected / restricted'}), 400
+
+    cfg = db.session.get(AppConfig, app_name)
+    if cfg is None:
+        cfg = AppConfig(app_name=app_name)
+        db.session.add(cfg)
+    cfg.access_level = level
+    db.session.commit()
+
+    return jsonify({'success': True, 'app': app_name, 'access_level': level})
+
+
+@updatehub.route('/api/<app_name>/access/users', methods=['POST'])
+@require_token
+def grant_access(app_name):
+    """
+    授权用户访问 restricted 软件。
+    JSON body: {"username": "john"}  或  {"user_id": 1}
+    """
+    if not is_valid_app_name(app_name):
+        return jsonify({'error': '非法的软件名称'}), 400
+
+    body = request.get_json(silent=True) or {}
+    user = None
+    if 'user_id' in body:
+        user = db.session.get(User, body['user_id'])
+    elif 'username' in body:
+        user = User.query.filter_by(username=body['username']).first()
+
+    if not user:
+        return jsonify({'error': '用户不存在'}), 404
+
+    if AppAccess.query.filter_by(app_name=app_name, user_id=user.id).first():
+        return jsonify({'message': '该用户已有访问权限'}), 200
+
+    db.session.add(AppAccess(app_name=app_name, user_id=user.id))
+    db.session.commit()
+
+    return jsonify({'success': True, 'app': app_name, 'username': user.username}), 201
+
+
+@updatehub.route('/api/<app_name>/access/users/<int:user_id>', methods=['DELETE'])
+@require_token
+def revoke_access(app_name, user_id):
+    """撤销用户对 restricted 软件的访问权限。"""
+    if not is_valid_app_name(app_name):
+        return jsonify({'error': '非法的软件名称'}), 400
+
+    row = AppAccess.query.filter_by(app_name=app_name, user_id=user_id).first()
+    if not row:
+        return jsonify({'error': '该用户无此软件的访问权限'}), 404
+
+    db.session.delete(row)
+    db.session.commit()
+
+    return jsonify({'success': True, 'app': app_name, 'user_id': user_id})
