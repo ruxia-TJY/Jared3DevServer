@@ -1,4 +1,4 @@
-# UpdateHub 访问控制说明
+# Jared3Dev Server 访问控制说明
 
 ## 访问级别
 

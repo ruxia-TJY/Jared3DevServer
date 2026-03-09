@@ -2,7 +2,7 @@
 
 ## 概览
 
-API Stack 是 UpdateHub 内置的通用 API 托管层，提供统一的执行入口、元信息查询、
+API Stack 是 Jared3Dev Server 内置的通用 API 托管层，提供统一的执行入口、元信息查询、
 Markdown 文档展示及管理员后台。
 
 **Base URL：** `http://<host>:5000/apistack`

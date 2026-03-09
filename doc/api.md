@@ -1,8 +1,8 @@
-# UpdateHub API 文档
+# Jared3Dev Server API 文档
 
 ## 概览
 
-UpdateHub 用于管理多个软件、多个平台的版本发布与下载。支持三种文件来源：
+Jared3Dev Server 用于管理多个软件、多个平台的版本发布与下载。支持三种文件来源：
 
 | 来源 | 说明 |
 |------|------|

@@ -1,7 +1,7 @@
 """
 run.py - 应用启动入口。
 
-直接运行此文件以在开发/生产环境中启动 UpdateHub 服务：
+直接运行此文件以在开发/生产环境中启动 Jared3Dev Server 服务：
     python run.py
 
 启动时会自动创建 uploads/ 和 data/ 目录（若不存在）。
