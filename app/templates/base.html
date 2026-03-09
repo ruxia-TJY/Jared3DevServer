@@ -5,16 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Jared3Dev Server{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" type="image/x-icon" sizes="16x16"  href="{{ url_for('static', filename='favicon/favicon-16.ico') }}">
+  <link rel="icon" type="image/x-icon" sizes="32x32"  href="{{ url_for('static', filename='favicon/favicon-32.ico') }}">
+  <link rel="icon" type="image/x-icon" sizes="48x48"  href="{{ url_for('static', filename='favicon/favicon-48.ico') }}">
+  <link rel="icon" type="image/x-icon" sizes="64x64"  href="{{ url_for('static', filename='favicon/favicon-64.ico') }}">
+  <link rel="icon" type="image/x-icon" sizes="128x128" href="{{ url_for('static', filename='favicon/favicon-128.ico') }}">
+  <link rel="icon" type="image/x-icon" sizes="256x256" href="{{ url_for('static', filename='favicon/favicon-256.ico') }}">
 </head>
 <body>
   <header class="site-header">
     <div class="container">
-      <a href="{{ url_for('updatehub.index') }}" class="site-logo">
-        <span class="logo-icon">⬆</span>
+      <a href="/" class="site-logo">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Jared3Dev Server">
         Jared3Dev Server
       </a>
       <nav class="site-nav">
-        <a href="{{ url_for('updatehub.index') }}">软件列表</a>
+        <a href="{{ url_for('updatehub.index') }}">UpdateHub</a>
         <a href="{{ url_for('apistack.api_doc') }}">API 文档</a>
         {% if current_user.is_authenticated %}
           {% if current_user.is_admin %}

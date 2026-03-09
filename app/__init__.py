@@ -49,6 +49,11 @@ def create_app() -> Flask:
         """
         return db.session.get(User, int(user_id))
 
+    @flask_app.route('/')
+    def index():
+        from flask import render_template
+        return render_template('index.html')
+
     with flask_app.app_context():
         # 确保所有 Model 在 create_all() 前已导入，表结构才能被正确创建
         from app.user.models import User  # noqa: F401

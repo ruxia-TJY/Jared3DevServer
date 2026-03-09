@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jared3Dev Server</title>
+
+    <meta name="keywords" content="博客,主页,blog,weiqi,ruxia,Jared">
+    <meta name="description" content="The homepage of Jared3Dev">
+    <meta name="author" content="Jared3Dev">
+    <meta name="robots" content="all">
+    <meta name="generator" content="Webstorm">
+    <meta name="copyright" content="Copyright by Jared">
+    <meta name="revisit-after" content="7 days">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/t.css') }}">
+    <link rel="icon" type="image/x-icon" sizes="16x16"  href="{{ url_for('static', filename='favicon/favicon-16.ico') }}">
+    <link rel="icon" type="image/x-icon" sizes="32x32"  href="{{ url_for('static', filename='favicon/favicon-32.ico') }}">
+    <link rel="icon" type="image/x-icon" sizes="48x48"  href="{{ url_for('static', filename='favicon/favicon-48.ico') }}">
+    <link rel="icon" type="image/x-icon" sizes="64x64"  href="{{ url_for('static', filename='favicon/favicon-64.ico') }}">
+    <link rel="icon" type="image/x-icon" sizes="128x128" href="{{ url_for('static', filename='favicon/favicon-128.ico') }}">
+    <link rel="icon" type="image/x-icon" sizes="256x256" href="{{ url_for('static', filename='favicon/favicon-256.ico') }}">
+</head>
+
+<body>
+    <div id="bg">
+        <div class="avatar-bg"><img src="{{ url_for('static',filename='imgs/avatar.png') }}" alt="头像" class="avatar"></div>
+        <div class="nickname">未栖</div>
+        <div class="description" id="description"></div>
+
+        <div class="location">地球 · 中国</div>
+
+        <div class="menu">
+            <ul>
+                <li><a href="https://blog.jiayublog.cn" target="_blank">博客</a></li>
+                <li><a href="{{ url_for('apistack.api_doc') }}">API</a></li>
+                <li><a href="https://webindex.jiayublog.cn" target="_blank">TWebDex</a></li>
+                <li><a href="https://blog.jiayublog.cn/about" target="_blank">关于</a></li>
+            </ul>
+        </div>
+
+        <hr />
+        <div class="footer">
+            &COPY; 2024 - 2026 Jared3Dev<br />
+            <a href="https://beian.miit.gov.cn/" target="_blank">皖ICP备2024060521号-1</a>
+            <a href="https://beian.mps.gov.cn/#/query/webSearch">皖公网安备34132402000172号</a>
+        </div>
+    </div>
+    <script src="{{ url_for('static',filename='js/typeing-effect.js') }}"></script>
+</body>
+</html>

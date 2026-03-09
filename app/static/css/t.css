@@ -1,0 +1,117 @@
+*{
+    padding: 0;
+    margin: 0;
+}
+
+html,body{
+    height: 100%;
+    width: 100%;
+    font-size:4px;
+}
+
+
+#bg{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.avatar-bg{
+    margin-top: 40rem;
+}
+.avatar{
+    background-color: lightgray;
+    width: 30rem;
+    height: 30rem;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    padding: 1rem;
+}
+
+.nickname{
+    font-size: 10rem;
+    color: black;
+    text-align: center;
+    font-weight: normal;
+    padding: 1rem;
+}
+
+.description{
+    font-size: 6rem;
+    color: black;
+    text-align: center;
+    font-weight: normal;
+    padding: 1rem;
+    height: 6rem;
+}
+#description{
+    animation: blink 0.7s infinite;
+}
+@keyframes blink{
+    0%,100%{border-color: #333;}
+    50%{border-color: transparent;}
+}
+
+.location{
+    font-size: 6rem;
+    padding-top:8rem;
+}
+
+.menu{
+    font-size: 6rem;
+    padding:2rem;
+    margin-top: 2rem;
+}
+
+.menu ul{
+    list-style: none;
+    padding:0;
+    margin:0;
+    display: flex;
+    align-items: center;
+}
+.menu ul li{
+    margin-right: 15rem;
+}
+
+.menu ul li:last-child{
+    margin-right: 0;
+}
+
+.footer{
+    margin-top: 2rem;
+    font-size: 5rem;
+    text-align: center;
+    line-height: 10rem;
+}
+
+.footer a{
+    color: black;
+    text-decoration: none;
+}
+
+
+a{
+    cursor: pointer;
+    text-decoration: none;
+    color: black;
+}
+a:hover{
+    color: black;
+}
+a:active{
+    color: black;
+}
+a:visited{
+    color: black;
+}
+
+
+hr{
+    width: 40%;
+    margin-top: 10rem;
+    margin-bottom: 1rem;
+}
