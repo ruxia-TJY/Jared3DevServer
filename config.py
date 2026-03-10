@@ -2,10 +2,10 @@
 config.py - Jared3Dev Server 全局配置。
 
 使用说明：
-    1. 修改下方数据库配置项后直接启动，无需其他步骤；
+    1. 复制 .env.example 为 .env，填入真实的数据库密码后启动；
     2. 上传 Token 与 Session 密钥在首次运行时自动生成，
        分别持久化至 data/.token 和 data/.secret_key；
-    3. 本文件已加入 .gitignore，数据库密码等敏感信息不会提交到版本库。
+    3. .env 已加入 .gitignore，数据库密码等敏感信息不会提交到版本库。
 
 运行时自动创建的文件：
     data/.token       - 文件上传接口的鉴权 Token（64 位十六进制）
@@ -15,17 +15,21 @@ import os
 import secrets
 from urllib.parse import quote_plus
 
+from dotenv import load_dotenv
+
+load_dotenv()  # 从 .env 文件加载环境变量（不覆盖系统已有的同名变量）
+
 # ── 项目名称 ────────────────────────────────────────────────
 APP_NAME = 'Jared3Dev Server'
 
 # ── MySQL 数据库配置 ─────────────────────────────────────────
-# 修改 DB_PASSWORD 后即可连接，数据库需提前在 MySQL 中创建：
+# 在 .env 文件中设置以下变量（数据库需提前在 MySQL 中创建）：
 #   CREATE DATABASE jared3devserver CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-DB_HOST     = '127.0.0.1'
-DB_PORT     = 3306
-DB_USER     = 'root'
-DB_PASSWORD = 'YOUR_PASSWORD'
-DB_NAME     = 'jared3devserver'
+DB_HOST     = os.environ['DB_HOST']
+DB_PORT     = int(os.environ.get('DB_PORT', 3306))
+DB_USER     = os.environ['DB_USER']
+DB_PASSWORD = os.environ['DB_PASSWORD']
+DB_NAME     = os.environ['DB_NAME']
 
 SQLALCHEMY_DATABASE_URI = (
     f'mysql+pymysql://{quote_plus(DB_USER)}:{quote_plus(DB_PASSWORD)}'
