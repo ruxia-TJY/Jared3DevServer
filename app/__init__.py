@@ -7,7 +7,7 @@ app/__init__.py - Flask 应用工厂。
     app = create_app()
 """
 import os
-from flask import Flask
+from flask import Flask, url_for
 from app.extensions import db, login_manager
 import config
 
@@ -33,6 +33,15 @@ def create_app() -> Flask:
 
     db.init_app(flask_app)
     login_manager.init_app(flask_app)
+
+    @flask_app.context_processor
+    def inject_static_v():
+        """给模板注入 static_v()，自动附加文件修改时间戳，实现缓存破坏。"""
+        def static_v(filename):
+            filepath = os.path.join(flask_app.static_folder, filename)
+            ts = int(os.path.getmtime(filepath)) if os.path.exists(filepath) else 0
+            return url_for('static', filename=filename, v=ts)
+        return dict(static_v=static_v)
 
     # user_loader 放在工厂内，避免循环导入
     from app.user.models import User

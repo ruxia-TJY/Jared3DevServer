@@ -178,6 +178,8 @@ server {
     client_max_body_size 2G;
 
     # 静态资源由 Nginx 直接提供，不经过 Python
+    # expires 7d 与应用层 Cache Busting（?v=时间戳）配合使用：
+    # 文件不变时浏览器直接使用缓存；文件更新后 URL 的 ?v= 变化，浏览器自动拉取新版本
     location /static/ {
         alias /srv/jared3devserver/app/static/;
         expires 7d;

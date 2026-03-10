@@ -164,6 +164,28 @@ ALLOWED_EXTENSIONS = {
 
 ---
 
+## 静态文件缓存破坏（Cache Busting）
+
+`app/__init__.py` 中通过 `context_processor` 向所有模板注入了 `static_v()` 函数：
+
+```python
+static_v('css/style.css')
+# 生成：/static/css/style.css?v=1741571062
+```
+
+`?v=` 参数值为文件的 **Unix 修改时间戳**，文件内容变动后时间戳自动更新，浏览器会将其视为新 URL 并重新拉取，无需手动强制刷新。
+
+在模板中使用（以 `base.html` 为例）：
+
+```html
+<!-- 使用 static_v() 替代 url_for('static', ...) -->
+<link rel="stylesheet" href="{{ static_v('css/style.css') }}">
+```
+
+> 若需对新的静态文件启用缓存破坏，将 `url_for('static', filename='...')` 替换为 `static_v('...')` 即可。
+
+---
+
 ## 启动
 
 ```bash
